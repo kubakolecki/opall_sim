@@ -1,0 +1,1 @@
+python src\point_cloud_optimization_simulator.py -c ".\sample_data\simulation_01\simulation_input\config.xml" -p ".\sample_data\simulation_01\simulation_input\poses.txt" -g ".\sample_data\simulation_01\simulation_input\graph_edges.txt" -o ".\sample_data\simulation_01\simulation_output"
