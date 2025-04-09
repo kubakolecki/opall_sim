@@ -1,6 +1,6 @@
 venv/
 src/__pycache__/
-sample_data/simulation_01/simulation_output/*.txt
-sample_data/simulation_01/simulation_output/*.dxf
-sample_data/simulation_02/simulation_output/*.txt
-sample_data/simulation_02/simulation_output/*.dxf
+sample_data/simulation_01/simulation_output/*
+!sample_data/simulation_01/simulation_output/.gitkeep
+sample_data/simulation_02/simulation_output/*
+!sample_data/simulation_02/simulation_output/.gitkeep
