@@ -72,8 +72,8 @@ def main():
        sys.exit(2)
        
     simulator = Simulator.Simulator(config)
+    print
     simulator.run_simulations(poses, visibility_graph)
-    io.print_features(simulator)
     io.save_features(path_directory_output, simulator)
     io.save_all_feature_data(path_directory_output, simulator, poses)
     io.save_network_to_dxf(path_directory_output, simulator, poses)
