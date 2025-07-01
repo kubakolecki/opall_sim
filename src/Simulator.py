@@ -29,7 +29,7 @@ class Simulator(object):
         horizontal_angle = random.uniform(0, 2*np.pi)
         vertical_angle = utils.deg_to_rad(random.uniform(self.config.min_vertical_angle_deg, self.config.max_vertical_angle_deg))
         slant_distance = random.uniform(self.config.min_distance, self.config.max_distance)
-        horizontal_distance = slant_distance*np.cos(slant_distance)
+        horizontal_distance = slant_distance*np.cos(vertical_angle)
         x = horizontal_distance*np.cos(horizontal_angle)
         y = horizontal_distance*np.sin(horizontal_angle)
         z = slant_distance*np.sin(vertical_angle)
