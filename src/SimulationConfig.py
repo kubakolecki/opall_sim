@@ -6,6 +6,7 @@ class Config:
         self.gaussian_noise_point_position = 0.01
         self.gaussian_noise_angle_deg = 0.01
         self.gaussian_noise_distance = 0.003
+        self.use_anisotropic_noise = True
         self.matching_probability = 0.2
         self.min_distance = 2.5
         self.max_distance = 3.1
@@ -22,6 +23,7 @@ class Config:
         self.gaussian_noise_point_position = float(config.find('gaussian_noise_point_position').text)
         self.gaussian_noise_angle_deg = float(config.find('gaussian_noise_angle_deg').text )
         self.gaussian_noise_distance = float(config.find('gaussian_noise_distance').text )
+        self.use_anisotropic_noise = config.find('use_anisotropic_noise').text == 'True'
         self.matching_probability = float(config.find('matching_probability').text)
         self.min_distance = float(config.find('min_distance').text)
         self.max_distance = float(config.find('max_distance').text)

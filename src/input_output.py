@@ -42,15 +42,29 @@ def print_features(simulator:Simulator):
 def save_features(output_direcotry:str, simulator:Simulator):
     path_to_output_file = os.path.join(output_direcotry, 'lidar_measurements.txt')
     with open(path_to_output_file,'w') as file:
-        header = 'pose_id,feature_id,x,y,z,sigma_x,sigma_y,sigma_z\n'
-        uncertainty = simulator.config.gaussian_noise_point_position
-        file.write(header)
-        for (pose_id, features) in simulator.dict_of_features.items():
-            for feature in features:
-                file.write('%d,' % pose_id)
-                file.write('%d,' % feature.id)
-                file.write('%.4f,%.4f,%.4f,' % (feature.position[0,0], feature.position[1,0], feature.position[2,0]) )
-                file.write('%.4f,%.4f,%.4f\n' % (uncertainty, uncertainty, uncertainty) )
+        if simulator.config.use_anisotropic_noise:
+            header = 'pose_id,feature_id,x,y,z,cov_xx,cov_xy,cov_xz,cov_yx,cov_yy,cov_yz,cov_zx,cov_zy,cov_zz\n'
+            file.write(header)
+            for (pose_id, features) in simulator.dict_of_features.items():
+                for feature in features:
+                    file.write('%d,' % pose_id)
+                    file.write('%d,' % feature.id)
+                    file.write('%.5f,%.5f,%.5f,' % (feature.position[0,0], feature.position[1,0], feature.position[2,0]) )
+                    for i in range(8):
+                        row = i // 3
+                        col = i % 3
+                        file.write('%.15f,' % feature.covariance[row,col])
+                    file.write('%.15f\n' % feature.covariance[2,2] )
+        else:
+            header = 'pose_id,feature_id,x,y,z,sigma_x,sigma_y,sigma_z\n'
+            uncertainty = simulator.config.gaussian_noise_point_position
+            file.write(header)
+            for (pose_id, features) in simulator.dict_of_features.items():
+                for feature in features:
+                    file.write('%d,' % pose_id)
+                    file.write('%d,' % feature.id)
+                    file.write('%.5f,%.5f,%.5f,' % (feature.position[0,0], feature.position[1,0], feature.position[2,0]) )
+                    file.write('%.5f,%.5f,%.5f\n' % (uncertainty, uncertainty, uncertainty) )
                 
                 
 def save_all_feature_data(output_direcotry:str, simulator:Simulator, poses:dict[int,geometry.Pose]):

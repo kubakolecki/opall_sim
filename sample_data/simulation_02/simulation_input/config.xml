@@ -4,6 +4,7 @@
 	<gaussian_noise_point_position>0.005</gaussian_noise_point_position>
 	<gaussian_noise_angle_deg>0.01</gaussian_noise_angle_deg>
 	<gaussian_noise_distance>0.003</gaussian_noise_distance>
+	<use_anisotropic_noise>True</use_anisotropic_noise>
 	<matching_probability>0.45</matching_probability>
 	<min_distance>1.0</min_distance>
 	<max_distance>5.0</max_distance>

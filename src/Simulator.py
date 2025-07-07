@@ -16,7 +16,7 @@ class Simulator(object):
         #the order in measuerement covariance is: slant_distance, horizontal_angle, vertical_angle
         self.measurement_covariance = np.zeros((3,3))
         self.measurement_covariance[0,0] = self.config.gaussian_noise_distance * self.config.gaussian_noise_distance
-        self.measurement_covariance[1,1] = self.config.gaussian_noise_angle_deg * self.config.gaussian_noise_angle_deg
+        self.measurement_covariance[1,1] = utils.deg_to_rad(self.config.gaussian_noise_angle_deg) * utils.deg_to_rad(self.config.gaussian_noise_angle_deg)
         self.measurement_covariance[2,2] = self.measurement_covariance[1,1]
 
         
@@ -31,7 +31,7 @@ class Simulator(object):
         self.generate_features(poses)
         self.add_noise_to_feature_coordinates()
 
-    def get_jacobian_of_cartesian_coordinates(self, slant_distance, horizontal_angle_rad, vertical_angle_rad):
+    def get_jacobian_of_mapping_to_cartesian_coordinates(self, slant_distance, horizontal_angle_rad, vertical_angle_rad):
         ch = np.cos(horizontal_angle_rad)
         sh = np.sin(horizontal_angle_rad)
         cv = np.cos(vertical_angle_rad)
@@ -48,7 +48,7 @@ class Simulator(object):
         #horizontal_distance = slant_distance*np.cos(vertical_angle)
         x, y, z = geometry.spherical_to_cartesian(slant_distance, horizontal_angle, vertical_angle)
         #anisotropic covariance generation:
-        jacobian = self.get_jacobian_of_cartesian_coordinates(slant_distance, horizontal_angle, vertical_angle)
+        jacobian = self.get_jacobian_of_mapping_to_cartesian_coordinates(slant_distance, horizontal_angle, vertical_angle)
         position_covariance = jacobian@self.measurement_covariance@np.transpose(jacobian)
         feature = geometry.FeatureIn3d(id = feature_id, position = np.array([x,y,z]).reshape((3,1)), uncertainty = self.config.gaussian_noise_point_position, covariance = position_covariance)
         return feature
@@ -78,17 +78,17 @@ class Simulator(object):
                 rnd = random.uniform(0.0,1.0) 
                 if rnd > self.config.matching_probability:
                     continue #sorry, this feature is not visible, skipp
-                visibilit_conflict = False #Features can not be co-visible if poses are not co-visible
+                visibility_conflict = False #Features can not be co-visible if poses are not co-visible
                 for id in set_of_poses_feature_is_visible_from:
                     if not (id in self.dict_of_poses_visibility[query_pose_id]):
-                        visibilit_conflict = True
-                if visibilit_conflict:
+                        visibility_conflict = True
+                if visibility_conflict:
                     continue
                 query_pose = poses[query_pose_id]
                 point_in_query = (query_pose.T_inv()@reference_pose.T())@feature_visible_from_reference_pose.as_homogenous_vector()
                 #compute the polar coordinates and afterwards comput anisotropic noise covariance matrix:
                 (d, alpha, beta) = geometry.cartesian_to_spherical(point_in_query[0,0], point_in_query[1,0], point_in_query[2,0] )
-                jacobian = self.get_jacobian_of_cartesian_coordinates(d, alpha, beta)
+                jacobian = self.get_jacobian_of_mapping_to_cartesian_coordinates(d, alpha, beta)
                 position_covariance = jacobian@self.measurement_covariance@np.transpose(jacobian)
                 feature_visible_from_query_pose = geometry.FeatureIn3d(id = feature_id, position = point_in_query[0:3,:], uncertainty = self.config.gaussian_noise_point_position, covariance=position_covariance) 
                 feature_in_world_q = query_pose.T()@feature_visible_from_query_pose.as_homogenous_vector()
@@ -114,14 +114,24 @@ class Simulator(object):
         return dict_of_poses_visibility
 
     def add_noise_to_feature_coordinates(self):
-        if self.config.gaussian_noise_point_position == 0.0:
+        if not self.config.use_anisotropic_noise and self.config.gaussian_noise_point_position == 0.0:
             return
-        random.seed()
-        for (_, features) in self.dict_of_features.items():
-            for feature in features:
-                feature.position[0,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise_point_position)
-                feature.position[1,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise_point_position)
-                feature.position[2,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise_point_position)
+        if not self.config.use_anisotropic_noise:
+            random.seed()
+            for (_, features) in self.dict_of_features.items():
+                for feature in features:
+                    feature.position[0,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise_point_position)
+                    feature.position[1,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise_point_position)
+                    feature.position[2,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise_point_position)
+        else: #using anisotropic full covariance 3D noise
+            print("Adding anisotropic noise using 3D covariance matrix!")
+            random.seed()
+            for (_, features) in self.dict_of_features.items():
+                for feature in features:
+                    noise = np.random.multivariate_normal(np.array([0,0,0]), feature.covariance)
+                    feature.position[0,0] += noise[0]
+                    feature.position[1,0] += noise[1]
+                    feature.position[2,0] += noise[2]
 
 
 
