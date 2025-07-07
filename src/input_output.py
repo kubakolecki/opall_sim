@@ -43,7 +43,7 @@ def save_features(output_direcotry:str, simulator:Simulator):
     path_to_output_file = os.path.join(output_direcotry, 'lidar_measurements.txt')
     with open(path_to_output_file,'w') as file:
         header = 'pose_id,feature_id,x,y,z,sigma_x,sigma_y,sigma_z\n'
-        uncertainty = simulator.config.gaussian_noise
+        uncertainty = simulator.config.gaussian_noise_point_position
         file.write(header)
         for (pose_id, features) in simulator.dict_of_features.items():
             for feature in features:

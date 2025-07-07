@@ -13,6 +13,12 @@ class Simulator(object):
         self.dict_of_features = {}
         self.dict_of_poses_visibility = {}
         self.dict_of_feature_counts = {}
+        #the order in measuerement covariance is: slant_distance, horizontal_angle, vertical_angle
+        self.measurement_covariance = np.zeros((3,3))
+        self.measurement_covariance[0,0] = self.config.gaussian_noise_distance * self.config.gaussian_noise_distance
+        self.measurement_covariance[1,1] = self.config.gaussian_noise_angle_deg * self.config.gaussian_noise_angle_deg
+        self.measurement_covariance[2,2] = self.measurement_covariance[1,1]
+
         
     def repeat_range(self, n:int):
         while True:
@@ -24,16 +30,27 @@ class Simulator(object):
         self.dict_of_poses_visibility = self.create_dict_of_poses_visibility(graph)
         self.generate_features(poses)
         self.add_noise_to_feature_coordinates()
+
+    def get_jacobian_of_cartesian_coordinates(self, slant_distance, horizontal_angle_rad, vertical_angle_rad):
+        ch = np.cos(horizontal_angle_rad)
+        sh = np.sin(horizontal_angle_rad)
+        cv = np.cos(vertical_angle_rad)
+        sv = np.sin(vertical_angle_rad)
+        jacobian = np.array([[sv*ch, -slant_distance*sv*sh, slant_distance*cv*ch],
+                             [sv*sh,  slant_distance*sv*ch, slant_distance*cv*sh],
+                             [cv, 0.0, -slant_distance*sv]])
+        return jacobian
                 
     def generate_random_feature(self, feature_id:int):
         horizontal_angle = random.uniform(0, 2*np.pi)
         vertical_angle = utils.deg_to_rad(random.uniform(self.config.min_vertical_angle_deg, self.config.max_vertical_angle_deg))
         slant_distance = random.uniform(self.config.min_distance, self.config.max_distance)
-        horizontal_distance = slant_distance*np.cos(vertical_angle)
-        x = horizontal_distance*np.cos(horizontal_angle)
-        y = horizontal_distance*np.sin(horizontal_angle)
-        z = slant_distance*np.sin(vertical_angle)
-        feature = geometry.FeatureIn3d(id = feature_id, position = np.array([x,y,z]).reshape((3,1)), uncertainty = self.config.gaussian_noise)
+        #horizontal_distance = slant_distance*np.cos(vertical_angle)
+        x, y, z = geometry.spherical_to_cartesian(slant_distance, horizontal_angle, vertical_angle)
+        #anisotropic covariance generation:
+        jacobian = self.get_jacobian_of_cartesian_coordinates(slant_distance, horizontal_angle, vertical_angle)
+        position_covariance = jacobian@self.measurement_covariance@np.transpose(jacobian)
+        feature = geometry.FeatureIn3d(id = feature_id, position = np.array([x,y,z]).reshape((3,1)), uncertainty = self.config.gaussian_noise_point_position, covariance = position_covariance)
         return feature
     
     def generate_features(self, poses:dict[int,geometry.Pose]):
@@ -69,7 +86,11 @@ class Simulator(object):
                     continue
                 query_pose = poses[query_pose_id]
                 point_in_query = (query_pose.T_inv()@reference_pose.T())@feature_visible_from_reference_pose.as_homogenous_vector()
-                feature_visible_from_query_pose = geometry.FeatureIn3d(id = feature_id, position = point_in_query[0:3,:], uncertainty = self.config.gaussian_noise) 
+                #compute the polar coordinates and afterwards comput anisotropic noise covariance matrix:
+                (d, alpha, beta) = geometry.cartesian_to_spherical(point_in_query[0,0], point_in_query[1,0], point_in_query[2,0] )
+                jacobian = self.get_jacobian_of_cartesian_coordinates(d, alpha, beta)
+                position_covariance = jacobian@self.measurement_covariance@np.transpose(jacobian)
+                feature_visible_from_query_pose = geometry.FeatureIn3d(id = feature_id, position = point_in_query[0:3,:], uncertainty = self.config.gaussian_noise_point_position, covariance=position_covariance) 
                 feature_in_world_q = query_pose.T()@feature_visible_from_query_pose.as_homogenous_vector()
                 feature_in_world_r = reference_pose.T()@feature_visible_from_reference_pose.as_homogenous_vector()
                 assert np.allclose(feature_in_world_q, feature_in_world_r, rtol=1e-05, atol=1e-08, equal_nan=False), "check for world coordinate consistency failed!" 
@@ -93,14 +114,14 @@ class Simulator(object):
         return dict_of_poses_visibility
 
     def add_noise_to_feature_coordinates(self):
-        if self.config.gaussian_noise == 0.0:
+        if self.config.gaussian_noise_point_position == 0.0:
             return
         random.seed()
         for (_, features) in self.dict_of_features.items():
             for feature in features:
-                feature.position[0,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise)
-                feature.position[1,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise)
-                feature.position[2,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise)
+                feature.position[0,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise_point_position)
+                feature.position[1,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise_point_position)
+                feature.position[2,0] += utils.gaussian_noise_with_limit(self.config.gaussian_noise_point_position)
 
 
 

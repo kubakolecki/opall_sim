@@ -2,6 +2,21 @@ import numpy as np
 import scipy.spatial.transform as transf
 import copy as cp
 
+def spherical_to_cartesian(slant_distance,horizontal_angle_rad, vertical_angle_rad ):
+    horizontal_distance = slant_distance*np.sin(vertical_angle_rad)
+    x = horizontal_distance*np.cos(horizontal_angle_rad)
+    y = horizontal_distance*np.sin(horizontal_angle_rad)
+    z = slant_distance*np.cos(vertical_angle_rad)
+    return x, y, z
+
+def cartesian_to_spherical(x, y, z):
+    slant_distance = np.sqrt(x*x + y*y + z*z)
+    horizontal_angle_rad = np.atan2(y, x)
+    vertical_angle_rad = np.acos(z/slant_distance)
+    return slant_distance, horizontal_angle_rad, vertical_angle_rad
+
+
+
 class Pose:
     def __init__(self, position = np.zeros((3,1)), rotation = transf.Rotation([0,0,0,1]), type:str = 'free' ):
         self.position = position
@@ -29,10 +44,11 @@ class Pose:
         return T_inv
     
 class FeatureIn3d:
-    def __init__(self,*, id:int = 0, position = np.zeros((3,1)), uncertainty:float = 0.01):
+    def __init__(self,*, id:int = 0, position = np.zeros((3,1)), uncertainty:float = 0.01, covariance:np.array  ):
         self.id = id
         self.position = position
         self.uncertainty = uncertainty
+        self.covariance = covariance #this is 'full', 3 x 3 covariance matrix
         self.visibility = set() #which stations this feature is visible from
         
     def as_homogenous_vector(self): #returns position as 4 x 1 homogenous vector

@@ -34,6 +34,23 @@ unconnected_apples = graph_apples.verify_node_connections()
 print("unconnected_apples:", unconnected_apples)
 assert unconnected_apples == {6,7,8,9} or unconnected_apples == {1,2,3,4,5}
 
+print("testing coordiante conversions")
+polar_coords = [(4.5, 0.4, np.pi/6),
+(4.5, -0.4, np.pi/6),
+(4.5, 0.0, np.pi/6),
+(4.5, 0.4, 0.0),
+(4.5, 0.0, 0.0)
+]
+
+
+for p in polar_coords:  
+    cart_coords = geo.shperical_to_cartesian(p[0], p[1], p[2])
+    polar_coords = geo.cartesian_to_spherical(cart_coords[0], cart_coords[1], cart_coords[2])
+    for i in (0,1,2):
+        print(np.abs(p[i] - polar_coords[i]))
+
+
+
 #TODO: test Pose class
 
 print("tests passed")

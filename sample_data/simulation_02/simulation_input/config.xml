@@ -1,12 +1,14 @@
 <?xml version="1.0"?>
 <simulation_config>
 	<number_of_features_per_cloud>80</number_of_features_per_cloud>
-	<gaussian_noise>0.005</gaussian_noise>
+	<gaussian_noise_point_position>0.005</gaussian_noise_point_position>
+	<gaussian_noise_angle_deg>0.01</gaussian_noise_angle_deg>
+	<gaussian_noise_distance>0.003</gaussian_noise_distance>
 	<matching_probability>0.45</matching_probability>
 	<min_distance>1.0</min_distance>
 	<max_distance>5.0</max_distance>
-	<min_vertical_angle_deg>-30</min_vertical_angle_deg>
-	<max_vertical_angle_deg>89.8</max_vertical_angle_deg>
+	<min_vertical_angle_deg>0.2</min_vertical_angle_deg>
+	<max_vertical_angle_deg>120.0</max_vertical_angle_deg>
 	<pose_noise_position>0.00</pose_noise_position>
 	<pose_noise_rotation_deg>0.0</pose_noise_rotation_deg>
 	<axes_length_in_dxf>1.0</axes_length_in_dxf>
