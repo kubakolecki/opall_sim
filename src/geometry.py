@@ -15,6 +15,16 @@ def cartesian_to_spherical(x, y, z):
     vertical_angle_rad = np.acos(z/slant_distance)
     return slant_distance, horizontal_angle_rad, vertical_angle_rad
 
+def get_jacobian_of_mapping_to_cartesian_coordinates(slant_distance, horizontal_angle_rad, vertical_angle_rad):
+    ch = np.cos(horizontal_angle_rad)
+    sh = np.sin(horizontal_angle_rad)
+    cv = np.cos(vertical_angle_rad)
+    sv = np.sin(vertical_angle_rad)
+    jacobian = np.array([[sv*ch, -slant_distance*sv*sh, slant_distance*cv*ch],
+                         [sv*sh,  slant_distance*sv*ch, slant_distance*cv*sh],
+                         [cv, 0.0, -slant_distance*sv]])
+    return jacobian
+
 
 
 class Pose:

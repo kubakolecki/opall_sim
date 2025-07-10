@@ -31,15 +31,7 @@ class Simulator(object):
         self.generate_features(poses)
         self.add_noise_to_feature_coordinates()
 
-    def get_jacobian_of_mapping_to_cartesian_coordinates(self, slant_distance, horizontal_angle_rad, vertical_angle_rad):
-        ch = np.cos(horizontal_angle_rad)
-        sh = np.sin(horizontal_angle_rad)
-        cv = np.cos(vertical_angle_rad)
-        sv = np.sin(vertical_angle_rad)
-        jacobian = np.array([[sv*ch, -slant_distance*sv*sh, slant_distance*cv*ch],
-                             [sv*sh,  slant_distance*sv*ch, slant_distance*cv*sh],
-                             [cv, 0.0, -slant_distance*sv]])
-        return jacobian
+
                 
     def generate_random_feature(self, feature_id:int):
         horizontal_angle = random.uniform(0, 2*np.pi)
@@ -48,7 +40,7 @@ class Simulator(object):
         #horizontal_distance = slant_distance*np.cos(vertical_angle)
         x, y, z = geometry.spherical_to_cartesian(slant_distance, horizontal_angle, vertical_angle)
         #anisotropic covariance generation:
-        jacobian = self.get_jacobian_of_mapping_to_cartesian_coordinates(slant_distance, horizontal_angle, vertical_angle)
+        jacobian = geometry.get_jacobian_of_mapping_to_cartesian_coordinates(slant_distance, horizontal_angle, vertical_angle)
         position_covariance = jacobian@self.measurement_covariance@np.transpose(jacobian)
         feature = geometry.FeatureIn3d(id = feature_id, position = np.array([x,y,z]).reshape((3,1)), uncertainty = self.config.gaussian_noise_point_position, covariance = position_covariance)
         return feature
@@ -88,7 +80,7 @@ class Simulator(object):
                 point_in_query = (query_pose.T_inv()@reference_pose.T())@feature_visible_from_reference_pose.as_homogenous_vector()
                 #compute the polar coordinates and afterwards comput anisotropic noise covariance matrix:
                 (d, alpha, beta) = geometry.cartesian_to_spherical(point_in_query[0,0], point_in_query[1,0], point_in_query[2,0] )
-                jacobian = self.get_jacobian_of_mapping_to_cartesian_coordinates(d, alpha, beta)
+                jacobian = geometry.get_jacobian_of_mapping_to_cartesian_coordinates(d, alpha, beta)
                 position_covariance = jacobian@self.measurement_covariance@np.transpose(jacobian)
                 feature_visible_from_query_pose = geometry.FeatureIn3d(id = feature_id, position = point_in_query[0:3,:], uncertainty = self.config.gaussian_noise_point_position, covariance=position_covariance) 
                 feature_in_world_q = query_pose.T()@feature_visible_from_query_pose.as_homogenous_vector()

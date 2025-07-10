@@ -1,5 +1,6 @@
 import geometry as geo
 import numpy as np
+import utils as utils
 
 nodes_ids = {1,2,3,4,5,6}
 nodes_ids_2 = {1,2,3,4,5,6,1}
@@ -35,21 +36,42 @@ print("unconnected_apples:", unconnected_apples)
 assert unconnected_apples == {6,7,8,9} or unconnected_apples == {1,2,3,4,5}
 
 print("testing coordiante conversions")
+
+
 polar_coords = [(4.5, 0.4, np.pi/6),
 (4.5, -0.4, np.pi/6),
 (4.5, 0.0, np.pi/6),
-(4.5, 0.4, 0.0),
-(4.5, 0.0, 0.0)
-]
-
+(4.5, 0.4, 0.01),
+(4.5, 0.0, 0.01)]
 
 for p in polar_coords:  
-    cart_coords = geo.shperical_to_cartesian(p[0], p[1], p[2])
+    cart_coords = geo.spherical_to_cartesian(p[0], p[1], p[2])
     polar_coords = geo.cartesian_to_spherical(cart_coords[0], cart_coords[1], cart_coords[2])
     for i in (0,1,2):
-        print(np.abs(p[i] - polar_coords[i]))
+        assert(np.abs(p[i] - polar_coords[i]) < 1e-12)
 
+alpha_rad = utils.deg_to_rad(90)
+beta_rad = utils.deg_to_rad(90)
+slant_distance = 1.0
 
+cartesian_coordinates = geo.spherical_to_cartesian(slant_distance, alpha_rad, beta_rad)
+assert(abs(cartesian_coordinates[0])<1e-15 )
+assert(abs(cartesian_coordinates[1] -1.0)<1e-15)
+assert(abs(cartesian_coordinates[2])<1e-15 )
+
+jacobian = geo.get_jacobian_of_mapping_to_cartesian_coordinates(slant_distance, alpha_rad, beta_rad)
+
+print ('testing jacobian of transformation of sphericacl coordinates to cartesian coordinates...')
+
+assert(abs(jacobian[0,0]) < 1e-13)
+assert(jacobian[0,1] < -1e-13)
+assert(abs(jacobian[0,2]) < 1e-13)
+assert(jacobian[1,0] > 1e-13)
+assert(abs(jacobian[1,1]) < 1e-13)
+assert(abs(jacobian[1,2]) < 1e-13)
+assert(abs(jacobian[2,0]) < 1e-13)
+assert(abs(jacobian[2,1]) < 1e-13)
+assert(jacobian[2,2] < -1e-13)
 
 #TODO: test Pose class
 
